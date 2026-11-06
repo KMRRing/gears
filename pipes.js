@@ -87,9 +87,13 @@ function openMenu() {
   // today's plate is a button, not a mode (Korbi, 4 November 2026): the same plate for everyone, a pool plate turned by the day
   const day = today(), got = b.dailyStars?.(day) || 0;
   todayPart(body, { done: got > 0, result: "★".repeat(got), play: () => b.goDaily(day), playing: b.isDaily, back: b.isDaily ? { text: "Back to the levels", fn: () => b.go(b.id) } : null });
-  part(body, "content").append(game, action("A random plate", () => b.goRandom(), "link"), b.levelList(id => { $("menuDlg").close(); b.go(id); }));
+  // the view first, then what is played: a toggle between the levels and random plates
+  const content = part(body, "content");
+  if (!IN_FRAME && mode === "flat") content.append(toggle("Play in 2D (saves battery)", b.viewKind !== "3d", on => { $("menuDlg").close(); setView(!on, true); }));
+  const random = plate && !b.isDaily;
+  content.append(game, toggle("Random plates", random, on => { $("menuDlg").close(); if (on) b.goRandom(); else b.go(b.id); }));
+  if (!random) content.append(b.levelList(id => { $("menuDlg").close(); b.go(id); }));
   const settings = part(body, "settings");
-  if (!IN_FRAME && mode === "flat") settings.append(choice("View", [["3d", "Movement (3D)"], ["2d", "Flat plate"]], b.viewKind, v => { $("menuDlg").close(); setView(v === "3d", true); }));
   settings.append(toggle("Sound", prefs.sound !== false, on => { prefs.sound = on; if (!IN_FRAME) write(KEY.prefs, prefs); }));
   const v = b.view;
   if (v?.kind === "3d" && v.canDeviceTilt && matchMedia("(pointer: coarse)").matches) {
